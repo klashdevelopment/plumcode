@@ -1,0 +1,12 @@
+META DEVELOPMENT; >> Set the meta environment to DEVELOPMENT.
+
+>> Define a variable that stores 1+1's value.
+VAR number = (1+1);
+>> Define a variable that stores the text we will print.
+VAR var = "Hello, World! Did you know that 1+1 is $(number)";
+>> Print the var.
+PRINT *var*;
+>> Set our GUI Content.
+SET GuiCenterHorizontal;
+SET GuiCenterVertical;
+GUI "Title" "<html></html>"
