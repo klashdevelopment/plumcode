@@ -7,8 +7,8 @@ PRINT *var*;
 >> Make our gui center horizontally and vertically using Plumcode's Config system (SET).
 SET GuiCenter="true";
 >> Create the HTML GUI using variables inside (Javascript/interactive functions are not allowed).
-SET GuiStylesheet="";
-GUI "Title" "<html><h1>Simple GUI</h1><h2 id='result'>Result of 1+1: $(1+1)</h2></html>"
+SET GuiStylesheet=""; >> GuiStylesheet is coming soon.
+GUI "Title" "<html><h1>Simple GUI</h1><h2 id='result'>Result of 1+1: $(1+1)</h2></html>";
 
 
 
