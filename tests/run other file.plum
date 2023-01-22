@@ -1,5 +1,14 @@
-META PRODUCTION;
+META PRODUCTION; >> Set the meta to production.
+
+>> Ask the user to input the filename without .plum extention.
 INPUT file "What is the Filename (without .plum)?";
+
+>> Tell the user that we know the filename.
 PRINT "Running $(file).plum"
+
+>> Get the full filename.
 VAR filename = "$(file).plum";
+
+>> Run it!
 RUN *filename*;
+
