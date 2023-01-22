@@ -1,8 +1,11 @@
 package com.klashdevelopment.plumcode;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
+import java.io.IOException;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -16,8 +19,8 @@ public class Plumcode {
     private static final Pattern pattern = Pattern.compile("\\$\\(([^)]+)\\)");
     private static boolean developmentMode = false,
     metaParsed = false,
-    horizAlignGUI = false,
-    vertcAlignGUI = false;
+    alignGUI = false;
+    private static String styles = "* {\\nfont-family: Arial, Helvetica, sans-serif;\\ncolor:white;\\nbackground-color:black;\\n}";
 
     public static void parse(String fileName) {
         try {
@@ -38,9 +41,11 @@ public class Plumcode {
                     } else if (part.startsWith("INPUT ")) {
                         parseINPUT(part);
                     } else if (part.startsWith("SET")) {
-                        set(part.substring(4));
+                        set(part.substring(4).split("=")[0],part.substring(4).split("=")[1]);
                     } else if (part.startsWith("GUI ")) {
                         parseGUI(part);
+                    } else if (part.startsWith("RUN ")) {
+                        Plumcode.parse(getString(part.substring(4).trim()));
                     }
                 }
             }
@@ -53,15 +58,15 @@ public class Plumcode {
         }
     }
 
-    public static void set(String property) {
+    public static void set(String property, String value) {
         switch (property) {
-            case "GuiCenterHorizontal":
-                horizAlignGUI = !horizAlignGUI;
-                System.out.println("{Config-SET} GuiCenterHorizontal has been set to " + horizAlignGUI);
+            case "GuiCenter":
+                alignGUI = Boolean.parseBoolean(value);
+                System.out.println("{Config-SET} GuiCenter has been set to " + alignGUI);
                 break;
-            case "GuiCenterVertical":
-                vertcAlignGUI = !vertcAlignGUI;
-                System.out.println("{Config-SET} GuiCenterVertical has been set to " + vertcAlignGUI);
+            case "GuiStylesheet":
+                styles += value;
+                System.out.println("{Config-SET} GuiStylesheet has been added to.");
                 break;
         }
     }
@@ -139,11 +144,8 @@ public class Plumcode {
         String frameContent = inps[3];
         if(developmentMode) {
             System.out.println("{GUI} Gui \""+frameTitle+"\" is being created.");
-            if(vertcAlignGUI) {
-                System.out.println("{GUI} Center Align Vertical is enabled.");
-            }
-            if(horizAlignGUI) {
-                System.out.println("{GUI} Center Align Horizontal is enabled.");
+            if(alignGUI) {
+                System.out.println("{GUI} Center Align is enabled.");
             }
         }
 
@@ -164,12 +166,27 @@ public class Plumcode {
         }
         JFrame frame = new JFrame(frameTitle);
         frame.setSize(800, 400);
-        JLabel theLabel = new JLabel(frameContent);
-        theLabel.setVerticalAlignment(vertcAlignGUI ? SwingConstants.CENTER : SwingConstants.NORTH);
-        theLabel.setHorizontalAlignment(horizAlignGUI ? SwingConstants.CENTER : SwingConstants.LEFT);
-        frame.add(theLabel, SwingConstants.CENTER);
         frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        createUI(frame, frameContent);
         frame.setVisible(true);
+    }
+    private static void createUI(final JFrame frame, String content){
+        JPanel panel = new JPanel();
+        LayoutManager layout = new FlowLayout();
+        panel.setLayout(layout);
+
+        JEditorPane jEditorPane = new JEditorPane();
+        JScrollPane jScrollPane = new JScrollPane(jEditorPane);
+        jEditorPane.setEditable(false);
+        jEditorPane.setSize(799, 399);
+        jEditorPane.setContentType("text/html");
+        if(alignGUI) {
+            jEditorPane.setText("<html><head><style>"+styles.replace("\\n", "\n")+"</style></head><body><center>"+content+"</center></body></html>");
+        } else {
+            jEditorPane.setText(content);
+        }
+        panel.add(jScrollPane);
+        frame.getContentPane().add(panel, BorderLayout.CENTER);
     }
 
     public static void parseVAR(String input) {

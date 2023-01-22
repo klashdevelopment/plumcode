@@ -1,0 +1,5 @@
+META PRODUCTION;
+INPUT file "What is the Filename (without .plum)?";
+PRINT "Running $(file).plum"
+VAR filename = "$(file).plum";
+RUN *filename*;
