@@ -29,6 +29,7 @@ jobs:
     - name: action-ghrelease
       uses: phuonghuynh/action-ghrelease@v1.1.0
       with:
-        body: "Automated Plumcode Release"
+        name: "Automated Plumcode Release"
         prerelease: true
         files: target/plumcode-1.0.jar
+        tag_name: ${{ github.GITHUB_REF }}
