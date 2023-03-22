@@ -1,35 +1,66 @@
-# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
-# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
-
-name: Maven Package
-
-on: [push]
-
+name: Build and Publish Release
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+env:
+  RELEASE_VERSION_PREFIX: auto-v
 jobs:
-  build:
-
+  build-and-publish-release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
     steps:
-    - uses: actions/checkout@v3
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        server-id: github
-        settings-path: ${{ github.workspace }}
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Build with Maven
-      run: mvn -B package --file pom.xml
-      
-    - name: GitHub Releases
-      uses: fnkr/github-action-ghr@v1.3
-      if: startsWith(github.ref, 'refs/tags/')
-      env:
-        GHR_COMPRESS: xz
-        GHR_PATH: target/plumcode-1.0.jar
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Get latest release
+        id: get_latest_release
+        uses: actions/github-script@v4
+        with:
+          script: |
+            const res = await github.repos.getLatestRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            console.log(res.data.tag_name);
+            return res.data.tag_name;
+
+      - name: Generate new release tag name
+        id: generate_release_tag_name
+        run: |
+          LAST_RELEASE_TAG=$GITHUB_REF
+          LAST_RELEASE_TAG=${LAST_RELEASE_TAG##refs/tags/}
+          NEW_RELEASE_VERSION=$(echo $LAST_RELEASE_TAG | sed -E 's/^[^0-9]*([0-9]+\.){2}[0-9]+$/\0+0.0.1/')
+          echo "::set-output name=NEW_RELEASE_TAG::$RELEASE_VERSION_PREFIX$NEW_RELEASE_VERSION"
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ steps.generate_release_tag_name.outputs.NEW_RELEASE_TAG }}
+          release_name: Release ${{ steps.generate_release_tag_name.outputs.NEW_RELEASE_TAG }}
+          draft: false
+          prerelease: false
+
+      - name: Upload JAR file to release
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/Plumcode-1.0.jar
+          asset_name: Plumcode-1.0.jar
+          asset_content_type: application/java-archive
